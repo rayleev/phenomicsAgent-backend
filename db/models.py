@@ -57,9 +57,10 @@ class Message(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
-    role = Column(String(20), nullable=False)  # "user" | "assistant"
+    role = Column(String(20), nullable=False)  # "user" | "assistant" | "tool"
     content = Column(Text, nullable=False, default="")
     thinking_content = Column(Text, nullable=True)
+    tool_calls = Column(Text, nullable=True)  # JSON string: tool call info for display
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     conversation = relationship("Conversation", back_populates="messages")

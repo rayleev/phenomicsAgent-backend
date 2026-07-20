@@ -182,12 +182,14 @@ async def add_message(
     role: str,
     content: str,
     thinking_content: Optional[str] = None,
+    tool_calls: Optional[str] = None,
 ) -> Message:
     msg = Message(
         conversation_id=conversation_id,
         role=role,
         content=content,
         thinking_content=thinking_content,
+        tool_calls=tool_calls,
     )
     session.add(msg)
     # Update conversation updated_at

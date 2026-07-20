@@ -9,8 +9,11 @@ from backend.auth.router import router as auth_router
 from backend.router.chat import router as chat_router
 from backend.router.config import router as config_router
 from backend.router.user_providers import router as user_providers_router
+from backend.services.rag_service import RAGQueryService
+from backend.services.registry import ServiceRegistry
+from backend.services.loader import load_services_from_yaml
 
-app = FastAPI(title="phenomicsAgent API", version="0.2.0")
+app = FastAPI(title="phenomicsAgent API", version="0.3.0")
 
 
 # ── CORS ─────────────────────────────────────────────────────────────────
@@ -72,8 +75,16 @@ else:
 
 @app.on_event("startup")
 async def startup():
-    """Initialize database tables on startup."""
+    """Initialize database tables and register services on startup."""
     from backend.db.session import engine
     from backend.db.models import Base
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Register built-in services
+    registry = ServiceRegistry()
+    registry.register(RAGQueryService())
+
+    # Load custom services from services.yaml
+    count = load_services_from_yaml()
+    print(f"[startup] Registered {registry.count} service(s) ({count} from services.yaml)")
