@@ -16,7 +16,13 @@ class ProviderItem(BaseModel):
     api_key: str = ""
 
 
+class DatabaseConfig(BaseModel):
+    """数据库连接配置。"""
+    url: str = "postgresql+asyncpg://postgres:Admin123!@10.33.105.145:5432/phenomics"
+
+
 class AppConfig(BaseModel):
-    """顶层配置：active_provider + 供应商字典。"""
+    """顶层配置：数据库 + active_provider + 供应商字典。"""
+    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     provider: str = "claude"
     providers: Dict[str, ProviderItem] = Field(default_factory=dict)

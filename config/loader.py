@@ -29,6 +29,12 @@ def write_config(cfg: AppConfig) -> None:
     dump_raw(cfg.model_dump())
 
 
+def get_database_url() -> str:
+    """Get database connection URL from config."""
+    cfg = load_config()
+    return cfg.database.url
+
+
 def mask_api_key(key: str) -> str:
     """Return a masked version of an API key for frontend display."""
     if not key or len(key) < 8:
