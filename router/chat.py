@@ -556,10 +556,10 @@ async def api_chat_stream(session_id: str):
                         # Also store on the tool_result_msg for the LLM
                         messages.append(tool_result_msg)
 
-                        # Notify frontend of completion/error
+                        # Notify frontend of completion/error (include result so frontend can render it)
                         yield (
                             f"event: tool_call\n"
-                            f"data: {json.dumps({'tool_name': tool_name, 'status': 'completed' if result.success else 'error', 'success': result.success, 'error': result.error if not result.success else None}, ensure_ascii=False)}\n\n"
+                            f"data: {json.dumps({'tool_name': tool_name, 'status': 'completed' if result.success else 'error', 'success': result.success, 'result': result.data if result.success else None, 'error': result.error if not result.success else None}, ensure_ascii=False)}\n\n"
                         )
 
                     # Phase 3: Second LLM call (without tools) to get final answer

@@ -1,9 +1,12 @@
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
+
+import httpx
 
 from backend.auth.router import router as auth_router
 from backend.router.chat import router as chat_router
@@ -46,6 +49,36 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(config_router, prefix="/api")
 app.include_router(user_providers_router, prefix="/api")
+
+
+# ── droneImaging 反向代理（/api/drone → {DRONE_IMAGING_BASE}/api）────────
+# 前端统一通过 /api/drone/... 访问影像服务：开发模式由 Vite 代理转发，
+# 生产模式（本服务直接提供前端页面）则由这里转发，保证两种模式行为一致。
+# 地址通过环境变量 DRONE_IMAGING_BASE 配置，Docker 部署时指向容器服务名，
+# 例如 http://drone-imaging:8002，避免硬编码 localhost。
+DRONE_IMAGING_BASE = os.environ.get("DRONE_IMAGING_BASE", "http://localhost:8002")
+
+
+@app.api_route("/api/drone/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def drone_proxy(path: str, request: Request):
+    target = f"{DRONE_IMAGING_BASE}/api/{path}"
+    body = await request.body()
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.request(
+                method=request.method,
+                url=target,
+                params=request.query_params,
+                content=body if body else None,
+                headers={"Content-Type": request.headers.get("content-type", "application/json")},
+            )
+        return Response(
+            content=resp.content,
+            status_code=resp.status_code,
+            media_type=resp.headers.get("content-type"),
+        )
+    except httpx.RequestError as e:
+        return JSONResponse(status_code=502, content={"detail": f"droneImaging 服务不可达: {e}"})
 
 
 # ── SPA: serve static files + catch-all for Vue Router paths ────────────

@@ -83,13 +83,27 @@ class HttpService(BaseService):
         self.request_template = request_template or {}
         self._timeout = timeout
 
-        # Build parameters from template placeholders
+        # Build parameters from template placeholders + URL placeholders
+        url_placeholders = set(re.findall(r"\{(\w+)\}", self.url))
         if self.request_template:
             self._parameters = _build_parameters_from_template(self.request_template)
+            # Merge URL placeholders into properties
+            for ph in url_placeholders:
+                if ph not in self._parameters.get("properties", {}):
+                    self._parameters["properties"][ph] = {
+                        "type": "string",
+                        "description": f"参数 {ph}",
+                    }
+                    self._parameters.setdefault("required", []).append(ph)
         else:
+            properties = {
+                ph: {"type": "string", "description": f"参数 {ph}"}
+                for ph in url_placeholders
+            }
             self._parameters = {
                 "type": "object",
-                "properties": {},
+                "properties": properties,
+                "required": list(url_placeholders) if url_placeholders else [],
             }
 
     @property
@@ -107,11 +121,12 @@ class HttpService(BaseService):
     async def invoke(self, **kwargs) -> ServiceResult:
         try:
             body = _resolve_template(self.request_template, kwargs)
+            url = _resolve_template(self.url, kwargs)
             async with httpx.AsyncClient(timeout=self._timeout) as client:
                 resp = await client.request(
                     method=self.method,
-                    url=self.url,
-                    json=body,
+                    url=url,
+                    json=body if self.method != "GET" else None,
                     headers=self.headers,
                 )
                 if resp.is_success:
