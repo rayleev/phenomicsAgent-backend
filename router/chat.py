@@ -284,8 +284,7 @@ async def api_register_custom_service(req: CustomServiceRequest):
     import yaml
     from pathlib import Path
 
-    services_path = Path(__file__).resolve().parent.parent.parent / "services.yaml"
-
+    services_path = Path(__file__).resolve().parent.parent / "services.yaml"
     if services_path.exists():
         with open(services_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
@@ -327,7 +326,7 @@ async def api_delete_custom_service(service_name: str):
     import yaml
     from pathlib import Path
 
-    services_path = Path(__file__).resolve().parent.parent.parent / "services.yaml"
+    services_path = Path(__file__).resolve().parent.parent / "services.yaml"
     if services_path.exists():
         with open(services_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}

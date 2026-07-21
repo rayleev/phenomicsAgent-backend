@@ -3,7 +3,7 @@ from pathlib import Path
 
 from backend.config.schema import AppConfig, ProviderItem
 
-CONFIG_PATH = Path(__file__).resolve().parent.parent.parent / "config.yaml"
+CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"
 
 
 def load_raw() -> dict:

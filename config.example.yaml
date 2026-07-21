@@ -1,0 +1,17 @@
+# ── 数据库 ──────────────────────────────────────────────
+database:
+  url: postgresql+asyncpg://user:password@localhost:5432/phenomics
+
+# ── LLM 供应商 ─────────────────────────────────────────
+provider: claude
+providers:
+  claude:
+    protocol: anthropic
+    model: claude-sonnet-4-20250514
+    base_url: https://api.anthropic.com
+    api_key: sk-placeholder
+  openai:
+    protocol: openai
+    model: gpt-4o
+    base_url: https://api.openai.com/v1
+    api_key: sk-placeholder

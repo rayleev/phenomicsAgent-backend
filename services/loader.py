@@ -6,7 +6,7 @@ from typing import Optional
 from backend.services.http_service import HttpService
 from backend.services.registry import ServiceRegistry
 
-SERVICES_CONFIG_PATH = Path(__file__).resolve().parent.parent.parent / "services.yaml"
+SERVICES_CONFIG_PATH = Path(__file__).resolve().parent.parent / "services.yaml"
 
 
 def load_services_from_yaml(path: Optional[Path] = None) -> int:
