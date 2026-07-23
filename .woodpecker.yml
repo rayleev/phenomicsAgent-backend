@@ -1,0 +1,35 @@
+when:
+  - event: manual
+  - event: push
+    branch: master
+
+steps:
+  - name: build-and-push
+    image: plugins/docker
+    settings:
+      repo: 172.17.1.130:3000/phenomics/phenomics-agent-backend
+      tags:
+        - ${CI_BUILD_NUMBER}
+        - ${CI_COMMIT_SHA}
+      registry: 172.17.1.130:3000
+      username:
+        from_secret: gitea_registry_user
+      password:
+        from_secret: gitea_registry_token
+      dockerfile: Dockerfile
+      context: .
+
+  - name: deploy
+    image: appleboy/drone-ssh
+    settings:
+      host:
+        from_secret: deploy_host
+      username:
+        from_secret: deploy_user
+      key:
+        from_secret: deploy_ssh_key
+      script:
+        - cd /home/root01/phenomics-agent
+        - docker compose pull phenomics-backend
+        - docker compose up -d phenomics-backend
+        - docker image prune -f
