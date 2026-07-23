@@ -31,6 +31,9 @@ app.add_middleware(
 
 
 # ── Global exception handler ────────────────────────────────────────────
+import logging
+
+logger = logging.getLogger("backend")
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -40,7 +43,13 @@ async def global_exception_handler(request: Request, exc: Exception):
             status_code=exc.status_code,
             content={"detail": exc.detail},
         )
-    raise exc
+    # Unexpected exception: log full traceback server-side, but never leak
+    # internals (traceback, paths, key fragments) to the client.
+    logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 
 # ── Routers (API first) ─────────────────────────────────────────────────
@@ -89,11 +98,27 @@ if FRONTEND_DIST.exists():
     # Mount static files (js, css, images, etc.)
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
 
+    # File extensions that are real static assets — a missing one should 404
+    # rather than return index.html (L5), so the browser/devtools can
+    # distinguish "route not found" from "static file not found".
+    _STATIC_EXT = {
+        ".js", ".css", ".map",  # scripts / styles / source maps
+        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico",  # images
+        ".woff", ".woff2", ".ttf", ".eot",  # fonts
+        ".json", ".yaml", ".yml",  # data files
+        ".txt", ".xml", ".webmanifest",
+    }
+
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         """Serve index.html for all non-API paths (Vue Router SPA)."""
         if full_path.startswith("api/"):
             return JSONResponse(status_code=404, content={"detail": "Not found"})
+        # Let genuine static-asset misses 404 instead of returning HTML.
+        if "." in (full_path.rsplit("/", 1)[-1] if "/" in full_path else full_path):
+            ext = "." + full_path.rsplit(".", 1)[-1].lower()
+            if ext in _STATIC_EXT:
+                return JSONResponse(status_code=404, content={"detail": "Not found"})
         return FileResponse(str(FRONTEND_DIST / "index.html"))
 else:
     @app.get("/")

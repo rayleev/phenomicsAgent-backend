@@ -1,7 +1,8 @@
 from uuid import UUID
 from typing import Optional
+from datetime import datetime, timezone
 
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import Conversation, Message, User, UserProvider
@@ -192,10 +193,10 @@ async def add_message(
         tool_calls=tool_calls,
     )
     session.add(msg)
-    # Update conversation updated_at
+    # Update conversation updated_at so the session list sorts correctly.
     conv = await session.get(Conversation, conversation_id)
     if conv:
-        conv.updated_at = func.now()
+        conv.updated_at = datetime.now(timezone.utc)
     await session.commit()
     await session.refresh(msg)
     return msg

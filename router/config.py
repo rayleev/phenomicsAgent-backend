@@ -58,9 +58,18 @@ async def api_update_config(update: ConfigUpdate):
     if update.providers is not None:
         existing = raw.setdefault("providers", {})
         for name, incoming in update.providers.items():
+            # Validate protocol (M6): only anthropic/openai are supported.
+            # Pydantic's ProviderItemIn already enforces the pattern, but we
+            # also guard the merge path so an empty value can never persist.
+            protocol = incoming.protocol or existing.get(name, {}).get("protocol", "")
+            if protocol not in SUPPORTED_PROTOCOLS:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"供应商 '{name}' 的协议 '{protocol or '(空)'}' 不受支持，仅允许: {sorted(SUPPORTED_PROTOCOLS)}",
+                )
             current = existing.get(name, {})
             merged = {
-                "protocol": incoming.protocol or current.get("protocol", ""),
+                "protocol": protocol,
                 "model": incoming.model or current.get("model", ""),
                 "base_url": incoming.base_url or current.get("base_url", ""),
                 "api_key": current.get("api_key", ""),
@@ -82,6 +91,13 @@ async def api_update_config(update: ConfigUpdate):
 async def api_delete_provider(name: str):
     raw = load_raw()
     providers = raw.get("providers", {})
+    # The path segment is URL-decoded by FastAPI, but provider names may
+    # contain characters (e.g. '/','#','?') that were encoded by the
+    # client. Try the decoded name first, then fall back to matching the
+    # raw path so such names can still be deleted (L6).
+    if name not in providers:
+        from urllib.parse import unquote
+        name = unquote(name)
     if name not in providers:
         raise HTTPException(status_code=404, detail=f"Provider '{name}' not found")
     del providers[name]

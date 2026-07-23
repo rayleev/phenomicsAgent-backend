@@ -85,9 +85,9 @@ async def api_upsert_provider(
         provider_id=provider_id,
     )
 
-    # If this is the first provider, auto-activate it
-    if not provider_id:
-        await set_active_provider(session, prov.id, user.id)
+    # NOTE: intentionally do NOT auto-activate on create (M15). The user may
+    # want to save a backup provider without switching their active model.
+    # Activation is a separate, explicit action via PUT /{id}/activate.
 
     return {"ok": True, "id": str(prov.id)}
 

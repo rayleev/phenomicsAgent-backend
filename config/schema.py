@@ -18,7 +18,8 @@ class ProviderItem(BaseModel):
 
 class DatabaseConfig(BaseModel):
     """数据库连接配置。"""
-    url: str = "postgresql+asyncpg://postgres:Admin123!@10.33.105.145:5432/phenomics"
+    # 默认值仅作开发占位；生产环境请在 config.yaml 中配置真实地址。
+    url: str = "postgresql+asyncpg://user:password@localhost:5432/phenomics"
 
 
 class AppConfig(BaseModel):

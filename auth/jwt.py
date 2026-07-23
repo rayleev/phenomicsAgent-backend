@@ -6,8 +6,17 @@ from uuid import UUID
 
 import jwt
 
-# Use env var in production, fallback for development
-JWT_SECRET = os.environ.get("JWT_SECRET", "phenomics-dev-jwt-secret-key-2026")
+# ── Secret management ─────────────────────────────────────────────────
+# JWT secret is read from the environment ONLY — there is no fallback.
+# The server will refuse to start (at import time) if JWT_SECRET is unset,
+# so a weak/never-secret key can never be used in production.
+JWT_SECRET = os.environ.get("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError(
+        "JWT_SECRET environment variable is required. "
+        "Set it before starting the server, e.g. export JWT_SECRET=$(openssl rand -hex 32)"
+    )
+
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 

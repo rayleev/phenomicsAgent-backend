@@ -20,9 +20,23 @@ pip install -r requirements.txt
 cp config.example.yaml config.yaml
 # 编辑 config.yaml 填入数据库与 LLM 供应商信息
 
+# 设置必须的环境变量（服务启动时校验，缺失则拒绝启动）
+cp .env.example .env
+# 编辑 .env 填入 JWT_SECRET 和 ENCRYPTION_KEY
+set -a && source .env && set +a   # Windows: 用 set / $env: 逐行设置
+
 # 启动（开发模式，热重载）
 python -m uvicorn backend.main:app --reload --port 8001
 ```
+
+### 必须的环境变量
+
+| 变量 | 说明 | 示例 |
+|------|------|------|
+| `JWT_SECRET` | JWT 签名密钥（HS256），生产环境用强随机值 | `openssl rand -hex 32` |
+| `ENCRYPTION_KEY` | 用户 API Key 的加密密钥，生产环境用强随机值 | `openssl rand -base64 32` |
+
+> ⚠️ 这两个变量**没有默认值**。未设置时服务会立即报错退出，防止使用弱密钥启动。
 
 服务默认监听 `http://localhost:8001`。API 文档：`http://localhost:8001/docs`
 
