@@ -4,18 +4,12 @@ when:
     branch: master
 
 steps:
-  - name: build-and-push
+  - name: build
     image: plugins/docker
     settings:
-      repo: 172.17.1.130:3000/phenomics/phenomics-agent-backend
-      tags:
-        - ${CI_BUILD_NUMBER}
-        - ${CI_COMMIT_SHA}
-      registry: 172.17.1.130:3000
-      username:
-        from_secret: gitea_registry_user
-      password:
-        from_secret: gitea_registry_token
+      repo: phenomics-agent-backend
+      tags: ${CI_BUILD_NUMBER}
+      dry_run: true
       dockerfile: Dockerfile
       context: .
 
@@ -26,8 +20,7 @@ steps:
         path: /var/run/docker.sock
     commands:
       - cd /home/root01/phenomics-agent
-      - docker compose pull phenomics-backend
-      - docker compose up -d phenomics-backend
+      - docker compose up -d --build phenomics-backend
       - docker image prune -f
 
 volumes:
