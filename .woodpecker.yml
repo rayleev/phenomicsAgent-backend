@@ -22,9 +22,14 @@ steps:
         set -e
 
         # ── 1. 写入配置与环境变量 ──
-        echo "$BACKEND_CONFIG" > /tmp/config.yaml
-        echo "$ENV_FILE" > /tmp/backend.env
-        echo "配置与环境变量已写入"
+        # 使用 root01 自有目录，避免 /tmp 被 root 遗留目录污染（无法删除）。
+        # rm -rf 清除任何残留（文件或旧目录），确保 echo 写入成功。
+        DEPLOY_DIR=/home/root01/phenomics-deploy
+        rm -rf "$DEPLOY_DIR"
+        mkdir -p "$DEPLOY_DIR"
+        echo "$BACKEND_CONFIG" > "$DEPLOY_DIR/config.yaml"
+        echo "$ENV_FILE" > "$DEPLOY_DIR/backend.env"
+        echo "配置与环境变量已写入 $DEPLOY_DIR"
 
         # ── 2. 确保 phenomics-net 网络存在 ──
         docker network inspect phenomics-net >/dev/null 2>&1 || docker network create phenomics-net
@@ -46,8 +51,8 @@ steps:
           -p 8007:8001 \
           --add-host=host.docker.internal:host-gateway \
           -e DRONE_IMAGING_BASE=http://host.docker.internal:8005 \
-          -v /tmp/config.yaml:/app/config.yaml:ro \
-          --env-file /tmp/backend.env \
+          -v "$DEPLOY_DIR/config.yaml:/app/config.yaml:ro" \
+          --env-file "$DEPLOY_DIR/backend.env" \
           phenomics-agent-backend:latest
 
         # ── 6. 健康检查（最多 60s）──
@@ -71,8 +76,8 @@ steps:
             -p 8007:8001 \
             --add-host=host.docker.internal:host-gateway \
             -e DRONE_IMAGING_BASE=http://host.docker.internal:8005 \
-            -v /tmp/config.yaml:/app/config.yaml:ro \
-            --env-file /tmp/backend.env \
+            -v "$DEPLOY_DIR/config.yaml:/app/config.yaml:ro" \
+            --env-file "$DEPLOY_DIR/backend.env" \
             $OLD_IMAGE
           echo "已回滚到旧镜像"
         fi
