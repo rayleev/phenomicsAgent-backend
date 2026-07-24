@@ -17,6 +17,7 @@ steps:
 
   - name: deploy
     image: docker:24
+    network_mode: host
     commands:
       - |
         set -e
