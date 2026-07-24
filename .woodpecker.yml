@@ -17,7 +17,6 @@ steps:
 
   - name: deploy
     image: docker:24
-    network_mode: host
     commands:
       - |
         set -e
@@ -56,8 +55,10 @@ steps:
           phenomics-agent-backend:latest
 
         # ── 6. 健康检查（最多 60s）──
+        # 用独立 curl 容器接入 phenomics-net，通过容器名访问后端。
+        # 避免 deploy 容器在 bridge 网络时 localhost:8007 指向自己的问题。
         for i in $(seq 1 20); do
-          if curl -fsS http://localhost:8007/openapi.json > /dev/null 2>&1; then
+          if docker run --rm --network phenomics-net curlimages/curl -fsS --max-time 2 http://phenomics-backend:8001/openapi.json > /dev/null 2>&1; then
             echo "部署成功，服务就绪"
             exit 0
           fi
