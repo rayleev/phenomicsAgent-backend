@@ -3,8 +3,8 @@
 from pathlib import Path
 from typing import Optional
 
-from backend.services.http_service import HttpService
-from backend.services.registry import ServiceRegistry
+from services.http_service import HttpService
+from services.registry import ServiceRegistry
 
 SERVICES_CONFIG_PATH = Path(__file__).resolve().parent.parent / "services.yaml"
 

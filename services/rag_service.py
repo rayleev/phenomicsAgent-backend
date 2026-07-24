@@ -5,7 +5,7 @@ Calls the existing paperRAG query API at http://10.33.105.145:8001/query.
 
 import httpx
 
-from backend.services.base import BaseService, ServiceResult
+from services.base import BaseService, ServiceResult
 
 
 class RAGQueryService(BaseService):

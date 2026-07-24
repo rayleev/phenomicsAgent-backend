@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.auth.crypto import encrypt_api_key, decrypt_api_key
-from backend.auth.deps import get_current_user
-from backend.db.crud import (
+from auth.crypto import encrypt_api_key, decrypt_api_key
+from auth.deps import get_current_user
+from db.crud import (
     list_user_providers,
     get_user_provider,
     upsert_user_provider,
@@ -17,9 +17,9 @@ from backend.db.crud import (
     set_active_provider,
     get_active_provider,
 )
-from backend.db.models import User
-from backend.db.session import get_session
-from backend.config.loader import mask_api_key
+from db.models import User
+from db.session import get_session
+from config.loader import mask_api_key
 
 router = APIRouter(prefix="/user/providers", tags=["user-providers"])
 

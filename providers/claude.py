@@ -12,7 +12,7 @@ from anthropic.types import (
 )
 from anthropic.lib.streaming import InputJsonEvent, ContentBlockStopEvent
 
-from backend.providers.base import BaseProvider, StreamEvent
+from providers.base import BaseProvider, StreamEvent
 
 
 class ClaudeProvider(BaseProvider):

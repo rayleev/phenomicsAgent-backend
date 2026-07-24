@@ -3,7 +3,7 @@ from typing import AsyncIterator
 
 from openai import AsyncOpenAI
 
-from backend.providers.base import BaseProvider, StreamEvent
+from providers.base import BaseProvider, StreamEvent
 
 
 class OpenAIProvider(BaseProvider):

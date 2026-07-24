@@ -5,7 +5,7 @@ from typing import Any
 
 import httpx
 
-from backend.services.base import BaseService, ServiceResult
+from services.base import BaseService, ServiceResult
 
 
 def _extract_placeholders(template: dict) -> set[str]:

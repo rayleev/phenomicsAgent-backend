@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from backend.services.base import BaseService
+from services.base import BaseService
 
 
 class ServiceRegistry:

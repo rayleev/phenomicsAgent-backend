@@ -3,8 +3,8 @@ from typing import Dict, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.config.loader import load_raw, dump_raw, mask_api_key
-from backend.config.schema import SUPPORTED_PROTOCOLS
+from config.loader import load_raw, dump_raw, mask_api_key
+from config.schema import SUPPORTED_PROTOCOLS
 
 router = APIRouter()
 

@@ -9,18 +9,18 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import StreamingResponse
 
-from backend.auth.crypto import decrypt_api_key
-from backend.auth.deps import get_current_user
-from backend.auth.jwt import verify_token
-from backend.config.loader import load_config, load_raw
-from backend.db import crud
-from backend.db.models import User
-from backend.db.session import get_session, AsyncSessionLocal
-from backend.providers.base import BaseProvider, StreamEvent
-from backend.providers.claude import ClaudeProvider
-from backend.providers.openai import OpenAIProvider
-from backend.services.base import ServiceResult
-from backend.services.registry import ServiceRegistry
+from auth.crypto import decrypt_api_key
+from auth.deps import get_current_user
+from auth.jwt import verify_token
+from config.loader import load_config, load_raw
+from db import crud
+from db.models import User
+from db.session import get_session, AsyncSessionLocal
+from providers.base import BaseProvider, StreamEvent
+from providers.claude import ClaudeProvider
+from providers.openai import OpenAIProvider
+from services.base import ServiceResult
+from services.registry import ServiceRegistry
 
 router = APIRouter()
 
@@ -420,7 +420,7 @@ async def api_register_custom_service(
     The service is added to the global ServiceRegistry immediately
     and also persisted to services.yaml.
     """
-    from backend.services.http_service import HttpService
+    from services.http_service import HttpService
 
     if not req.name or not req.url:
         raise HTTPException(status_code=400, detail="name and url are required")

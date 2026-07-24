@@ -7,7 +7,7 @@
 ## 本地开发
 
 ```bash
-cd backend
+cd phenomicsAgent-backend
 
 # 创建虚拟环境
 python -m venv venv
@@ -26,7 +26,7 @@ cp .env.example .env
 set -a && source .env && set +a   # Windows: 用 set / $env: 逐行设置
 
 # 启动（开发模式，热重载）
-python -m uvicorn backend.main:app --reload --port 8001
+python -m uvicorn main:app --reload --port 8001
 ```
 
 ### 必须的环境变量
@@ -59,7 +59,7 @@ backend/
 ## Docker 构建与运行
 
 ```bash
-cd backend
+cd phenomicsAgent-backend
 
 # 构建镜像
 docker build -t phenomics-agent-backend .
@@ -73,4 +73,4 @@ docker run -d \
   phenomics-agent-backend
 ```
 
-容器内工作目录为 `/app`，入口：`uvicorn backend.main:app --host 0.0.0.0 --port 8001`
+容器内工作目录为 `/app`，入口：`uvicorn main:app --host 0.0.0.0 --port 8001`

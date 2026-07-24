@@ -1,7 +1,7 @@
 import yaml
 from pathlib import Path
 
-from backend.config.schema import AppConfig, ProviderItem
+from config.schema import AppConfig, ProviderItem
 
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"
 

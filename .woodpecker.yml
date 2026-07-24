@@ -1,42 +1,84 @@
-when:
-  - event: manual
-  - event: push
-    branch: master
+# Woodpecker CI — phenomicsAgent 后端
+# 仿照 droneImaging 项目: build → deploy（停旧 → 起新 → 健康检查 → 失败回滚）
+#
+# 所需 Woodpecker secret（在仓库 Settings → Secrets 配置）:
+#   backend_config  → 完整的 config.yaml 内容（含数据库、LLM 供应商）
+#   env_file        → 后端环境变量，格式为 KEY=VALUE 行：
+#                      JWT_SECRET=<强随机值>
+#                      ENCRYPTION_KEY=<强随机值>
 
 steps:
   - name: build
-    image: plugins/docker
-    settings:
-      repo: phenomics-agent-backend
-      tags: ${CI_BUILD_NUMBER}
-      dry_run: true
-      dockerfile: Dockerfile
-      context: .
+    image: docker:24
+    commands:
+      - docker build -t phenomics-agent-backend:latest .
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
   - name: deploy
-    image: docker
-    volumes:
-      - name: docker-sock
-        path: /var/run/docker.sock
-      - name: deploy-dir
-        path: /home/root01/phenomics-agent
+    image: docker:24
     commands:
-      - cat /run/secrets/env_file > /home/root01/phenomics-agent/.env
-      - cat /run/secrets/backend_config > /home/root01/phenomics-agent/backend-config/config.yaml
-      - cd /home/root01/phenomics-agent
-      - docker compose -f docker-compose.backend.yml up -d --build phenomics-backend
-      - docker image prune -f
+      - |
+        set -e
 
-volumes:
-  - name: docker-sock
-    host:
-      path: /var/run/docker.sock
-  - name: deploy-dir
-    host:
-      path: /home/root01/phenomics-agent
+        # ── 1. 写入配置与环境变量 ──
+        echo "$BACKEND_CONFIG" > /tmp/config.yaml
+        echo "$ENV_FILE" > /tmp/backend.env
+        echo "配置与环境变量已写入"
 
-secrets:
-  - name: env_file
-    secret: env_file
-  - name: backend_config
-    secret: backend_config
+        # ── 2. 确保 phenomics-net 网络存在 ──
+        docker network inspect phenomics-net >/dev/null 2>&1 || docker network create phenomics-net
+
+        # ── 3. 记录旧镜像（用于回滚）──
+        OLD_IMAGE=$(docker inspect --format='{{.Config.Image}}' phenomics-backend 2>/dev/null) || OLD_IMAGE=""
+
+        # ── 4. 停旧容器 ──
+        docker stop phenomics-backend 2>/dev/null || true
+        docker rm -f phenomics-backend 2>/dev/null || true
+
+        # ── 5. 启动新容器 ──
+        docker run -d \
+          --name phenomics-backend \
+          --network phenomics-net \
+          --restart unless-stopped \
+          -p 8001:8001 \
+          --add-host=host.docker.internal:host-gateway \
+          -e DRONE_IMAGING_BASE=http://host.docker.internal:8005 \
+          -v /tmp/config.yaml:/app/config.yaml:ro \
+          --env-file /tmp/backend.env \
+          phenomics-agent-backend:latest
+
+        # ── 6. 健康检查（最多 60s）──
+        for i in $(seq 1 20); do
+          if curl -fsS http://localhost:8001/openapi.json > /dev/null 2>&1; then
+            echo "部署成功，服务就绪"
+            exit 0
+          fi
+          sleep 3
+        done
+
+        # ── 7. 失败 → 回滚 ──
+        echo "新容器未就绪，执行回滚..."
+        docker stop phenomics-backend 2>/dev/null || true
+        docker rm -f phenomics-backend 2>/dev/null || true
+        if [ -n "$OLD_IMAGE" ]; then
+          docker run -d \
+            --name phenomics-backend \
+            --network phenomics-net \
+            --restart unless-stopped \
+            -p 8001:8001 \
+            --add-host=host.docker.internal:host-gateway \
+            -e DRONE_IMAGING_BASE=http://host.docker.internal:8005 \
+            -v /tmp/config.yaml:/app/config.yaml:ro \
+            --env-file /tmp/backend.env \
+            $OLD_IMAGE
+          echo "已回滚到旧镜像"
+        fi
+        exit 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      BACKEND_CONFIG:
+        from_secret: backend_config
+      ENV_FILE:
+        from_secret: env_file

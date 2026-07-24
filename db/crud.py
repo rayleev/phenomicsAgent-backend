@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.db.models import Conversation, Message, User, UserProvider
+from db.models import Conversation, Message, User, UserProvider
 
 
 # ── User ─────────────────────────────────────────────────────────────────

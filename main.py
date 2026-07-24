@@ -8,13 +8,13 @@ from fastapi.staticfiles import StaticFiles
 
 import httpx
 
-from backend.auth.router import router as auth_router
-from backend.router.chat import router as chat_router
-from backend.router.config import router as config_router
-from backend.router.user_providers import router as user_providers_router
-from backend.services.rag_service import RAGQueryService
-from backend.services.registry import ServiceRegistry
-from backend.services.loader import load_services_from_yaml
+from auth.router import router as auth_router
+from router.chat import router as chat_router
+from router.config import router as config_router
+from router.user_providers import router as user_providers_router
+from services.rag_service import RAGQueryService
+from services.registry import ServiceRegistry
+from services.loader import load_services_from_yaml
 
 app = FastAPI(title="phenomicsAgent API", version="0.3.0")
 
@@ -134,8 +134,8 @@ else:
 @app.on_event("startup")
 async def startup():
     """Initialize database tables and register services on startup."""
-    from backend.db.session import engine
-    from backend.db.models import Base
+    from db.session import engine
+    from db.models import Base
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

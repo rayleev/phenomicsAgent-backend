@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.auth.jwt import create_access_token
-from backend.db.crud import create_user, get_user_by_username
-from backend.db.session import get_session
+from auth.jwt import create_access_token
+from db.crud import create_user, get_user_by_username
+from db.session import get_session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
