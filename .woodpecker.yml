@@ -37,11 +37,13 @@ steps:
         docker rm -f phenomics-backend 2>/dev/null || true
 
         # ── 5. 启动新容器 ──
+        # 主机端口 8007（8001 已被 paperrag-query 占用），容器端口 8001。
+        # 前端 nginx 通过容器名 phenomics-backend:8001 代理，不受主机端口影响。
         docker run -d \
           --name phenomics-backend \
           --network phenomics-net \
           --restart unless-stopped \
-          -p 8001:8001 \
+          -p 8007:8001 \
           --add-host=host.docker.internal:host-gateway \
           -e DRONE_IMAGING_BASE=http://host.docker.internal:8005 \
           -v /tmp/config.yaml:/app/config.yaml:ro \
@@ -50,7 +52,7 @@ steps:
 
         # ── 6. 健康检查（最多 60s）──
         for i in $(seq 1 20); do
-          if curl -fsS http://localhost:8001/openapi.json > /dev/null 2>&1; then
+          if curl -fsS http://localhost:8007/openapi.json > /dev/null 2>&1; then
             echo "部署成功，服务就绪"
             exit 0
           fi
@@ -66,7 +68,7 @@ steps:
             --name phenomics-backend \
             --network phenomics-net \
             --restart unless-stopped \
-            -p 8001:8001 \
+            -p 8007:8001 \
             --add-host=host.docker.internal:host-gateway \
             -e DRONE_IMAGING_BASE=http://host.docker.internal:8005 \
             -v /tmp/config.yaml:/app/config.yaml:ro \
