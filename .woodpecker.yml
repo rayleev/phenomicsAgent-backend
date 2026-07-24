@@ -50,7 +50,7 @@ steps:
           -p 8007:8001 \
           --add-host=host.docker.internal:host-gateway \
           -e DRONE_IMAGING_BASE=http://host.docker.internal:8005 \
-          -v "$DEPLOY_DIR/backend-config.yaml:/app/config.yaml:ro" \
+          -v "$DEPLOY_DIR/backend-config.yaml:/app/config.yaml" \
           --env-file "$DEPLOY_DIR/backend.env" \
           phenomics-agent-backend:latest
 
@@ -77,7 +77,7 @@ steps:
             -p 8007:8001 \
             --add-host=host.docker.internal:host-gateway \
             -e DRONE_IMAGING_BASE=http://host.docker.internal:8005 \
-            -v "$DEPLOY_DIR/backend-config.yaml:/app/config.yaml:ro" \
+            -v "$DEPLOY_DIR/backend-config.yaml:/app/config.yaml" \
             --env-file "$DEPLOY_DIR/backend.env" \
             $OLD_IMAGE
           echo "已回滚到旧镜像"
