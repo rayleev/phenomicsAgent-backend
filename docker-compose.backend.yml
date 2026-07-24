@@ -1,0 +1,23 @@
+services:
+  phenomics-backend:
+    image: phenomics-agent-backend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: phenomics-backend
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    volumes:
+      - ./backend-config/config.yaml:/app/config.yaml:ro
+    environment:
+      - DRONE_IMAGING_BASE=http://host.docker.internal:8005
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+networks:
+  default:
+    name: phenomics-net
+    external: true
