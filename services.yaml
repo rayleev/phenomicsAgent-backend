@@ -13,7 +13,7 @@ services:
   search_images:
     name: search_images
     description: 根据自然语言描述语义检索无人机影像。输入查询文本（如"拔节期水稻田影像"、"有病害的田块"），返回匹配的影像列表（含缩略图URL、瓦片URL、地理范围、VLM描述等）。
-    url: http://localhost:8002/api/images/search
+    url: http://host.docker.internal:8005/api/images/search
     method: POST
     headers:
       Content-Type: application/json
@@ -25,6 +25,6 @@ services:
   get_image_detail:
     name: get_image_detail
     description: 根据影像ID获取无人机影像的完整元数据，包括GeoTIFF参数（分辨率、波段、坐标系）、飞行信息、VLM语义描述、瓦片URL等。
-    url: http://localhost:8002/api/images/{image_id}
+    url: http://host.docker.internal:8005/api/images/{image_id}
     method: GET
     timeout: 15.0
