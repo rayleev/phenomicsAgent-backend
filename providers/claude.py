@@ -65,6 +65,25 @@ class ClaudeProvider(BaseProvider):
             # 内容已全部 yield，忽略此错误，正常结束流。
             yield StreamEvent(type="done", delta="")
 
+    @staticmethod
+    def _convert_tools_to_anthropic(tools: list[dict]) -> list[dict]:
+        """Convert tools from OpenAI Function Calling format to Anthropic native format.
+
+        ServiceRegistry returns tools in OpenAI format:
+            {"type": "function", "function": {"name", "description", "parameters"}}
+        Anthropic SDK expects:
+            {"name", "description", "input_schema"}
+        """
+        anthropic_tools = []
+        for t in tools:
+            fn = t.get("function", {})
+            anthropic_tools.append({
+                "name": fn.get("name", ""),
+                "description": fn.get("description", ""),
+                "input_schema": fn.get("parameters", {"type": "object", "properties": {}}),
+            })
+        return anthropic_tools
+
     async def chat_stream_with_tools(
         self,
         messages: list[dict],
@@ -82,6 +101,9 @@ class ClaudeProvider(BaseProvider):
             async for event in self.chat_stream(messages, thinking_enabled=thinking_enabled):
                 yield event
             return
+
+        # Convert OpenAI-format tools to Anthropic native format
+        tools = self._convert_tools_to_anthropic(tools)
 
         kwargs: dict = {
             "max_tokens": 32000,
