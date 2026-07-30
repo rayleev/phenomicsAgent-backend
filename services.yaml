@@ -1,19 +1,10 @@
 services:
-  weather_api:
-    name: weather_api
-    description: 查询指定城市的天气预报
-    url: https://api.caiyunapp.com/v2.6/TAkhjf8d1nlSlspN/101.6656,39.2072/realtime
-    method: POST
-    headers:
-      Content-Type: application/json
-    request_template:
-      city: '{city}'
-      days: 3
-
   search_images:
     name: search_images
-    description: 根据自然语言描述语义检索无人机影像。输入查询文本（如"拔节期水稻田影像"、"有病害的田块"），返回匹配的影像列表（含缩略图URL、瓦片URL、地理范围、VLM描述等）。
-    url: http://host.docker.internal:8005/api/images/search
+    description: >
+      语义检索无人机影像。输入查询文本（如"拔节期水稻田"、"有病害的田块"），返回匹配的影像列表。
+      回答格式：1.说"为您找到X幅相关影像" 2.一句话概括共同特征 3.不逐条描述（已用卡片展示） 4.可询问是否进一步分析
+    url: http://localhost:8002/api/images/search
     method: POST
     headers:
       Content-Type: application/json
@@ -24,7 +15,86 @@ services:
 
   get_image_detail:
     name: get_image_detail
-    description: 根据影像ID获取无人机影像的完整元数据，包括GeoTIFF参数（分辨率、波段、坐标系）、飞行信息、VLM语义描述、瓦片URL等。
-    url: http://host.docker.internal:8005/api/images/{image_id}
+    description: 获取影像完整元数据（分辨率、波段、坐标系、飞行信息、VLM描述、瓦片URL等）。
+    url: http://localhost:8002/api/images/{image_id}
     method: GET
     timeout: 15.0
+
+  divide_plots:
+    name: divide_plots
+    description: >
+      将影像指定区域划分为试验小区。用户要求划分小区、分试验区、画小区时使用。
+      回答格式：1.说"已完成小区划分，共生成X个小区" 2.简要说明划分参数 3.不逐条描述（已在地图展示） 4.可询问是否分析某小区
+    url: http://localhost:8002/api/plots/divide
+    method: POST
+    headers:
+      Content-Type: application/json
+    request_template:
+      image_id: '{image_id}'
+      region: '{region}'
+      n_rows: '{n_rows}'
+      n_cols: '{n_cols}'
+      plot_width_m: '{plot_width_m}'
+      plot_height_m: '{plot_height_m}'
+      rotation_deg: '{rotation_deg}'
+      label_scheme: '{label_scheme}'
+    parameters:
+      image_id:
+        type: string
+        description: 影像 ID
+        required: true
+      region:
+        type: object
+        description: 绘制区域 GeoJSON Polygon 或 bbox，为空则用整幅影像
+        required: false
+      n_rows:
+        type: integer
+        description: 行数
+        required: false
+      n_cols:
+        type: integer
+        description: 列数
+        required: false
+      plot_width_m:
+        type: number
+        description: 小区宽度（米）
+        required: false
+      plot_height_m:
+        type: number
+        description: 小区高度（米）
+        required: false
+      rotation_deg:
+        type: number
+        description: 旋转角度（度）
+        required: false
+      label_scheme:
+        type: string
+        description: "编号方案: grid(A1,A2...) 或 linear(1,2,3...)"
+        required: false
+    timeout: 30.0
+
+  sam_predict:
+    name: sam_predict
+    description: 使用 SAM 模型分割影像，自动检测作物/区域边界。用于优化边界、精确分割、识别田块。
+    url: http://sam-service:8003/sam/predict
+    method: POST
+    headers:
+      Content-Type: application/json
+    request_template:
+      image_id: '{image_id}'
+      region: '{region}'
+      mode: '{mode}'
+    parameters:
+      image_id:
+        type: string
+        description: 影像 ID
+        required: true
+      region:
+        type: object
+        description: 区域提示 bbox 或 points
+        required: false
+      mode:
+        type: string
+        description: "分割模式: box | point | auto"
+        required: false
+    timeout: 60.0

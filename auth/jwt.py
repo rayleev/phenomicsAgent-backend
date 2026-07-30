@@ -18,7 +18,7 @@ if not JWT_SECRET:
     )
 
 JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = 7
+ACCESS_TOKEN_EXPIRE_DAYS = 60
 
 
 def create_access_token(

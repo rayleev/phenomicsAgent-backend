@@ -70,7 +70,7 @@ DRONE_IMAGING_BASE = os.environ.get("DRONE_IMAGING_BASE", "http://localhost:8002
 
 @app.api_route("/api/drone/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def drone_proxy(path: str, request: Request):
-    target = f"{DRONE_IMAGING_BASE}/api/{path}"
+    target = f"{DRONE_IMAGING_BASE}/{path}"
     body = await request.body()
     try:
         async with httpx.AsyncClient(timeout=60) as client:
