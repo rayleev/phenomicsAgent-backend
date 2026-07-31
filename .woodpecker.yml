@@ -30,7 +30,8 @@ steps:
         echo "$ENV_FILE" > "$DEPLOY_DIR/backend.env"
         echo "配置与环境变量已写入 $DEPLOY_DIR"
 
-        # ── 2. 确保 phenomics-net 网络存在 ──
+        # ── 2. 确保网络存在 ──
+        docker network inspect infra >/dev/null 2>&1 || docker network create infra
         docker network inspect phenomics-net >/dev/null 2>&1 || docker network create phenomics-net
 
         # ── 3. 记录旧镜像（用于回滚）──
@@ -43,13 +44,14 @@ steps:
         # ── 5. 启动新容器 ──
         # 主机端口 8007（8001 已被 paperrag-query 占用），容器端口 8001。
         # 前端 nginx 通过容器名 phenomics-backend:8001 代理，不受主机端口影响。
+        # infra 网络: 用容器名 postgres 直接访问数据库（不再依赖 host.docker.internal）
+        # phenomics-net: 与 phenomics-frontend / drone-imaging 通信
         docker run -d \
           --name phenomics-backend \
+          --network infra \
           --network phenomics-net \
           --restart unless-stopped \
           -p 8007:8001 \
-          --add-host=host.docker.internal:host-gateway \
-          -e DRONE_IMAGING_BASE=http://host.docker.internal:8005 \
           -v "$DEPLOY_DIR/backend-config.yaml:/app/config.yaml" \
           --env-file "$DEPLOY_DIR/backend.env" \
           phenomics-agent-backend:latest
@@ -72,11 +74,10 @@ steps:
         if [ -n "$OLD_IMAGE" ]; then
           docker run -d \
             --name phenomics-backend \
+            --network infra \
             --network phenomics-net \
             --restart unless-stopped \
             -p 8007:8001 \
-            --add-host=host.docker.internal:host-gateway \
-            -e DRONE_IMAGING_BASE=http://host.docker.internal:8005 \
             -v "$DEPLOY_DIR/backend-config.yaml:/app/config.yaml" \
             --env-file "$DEPLOY_DIR/backend.env" \
             $OLD_IMAGE

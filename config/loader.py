@@ -1,9 +1,30 @@
+import os
+import re
 import yaml
 from pathlib import Path
 
 from config.schema import AppConfig, ProviderItem
 
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"
+
+_ENV_PATTERN = re.compile(r'\$\{(\w+):([^}]*)\}')
+
+def _expand_env(value):
+    """将字符串中的 ${ENV:default} 替换为环境变量值或默认值。"""
+    if isinstance(value, str):
+        match = _ENV_PATTERN.fullmatch(value)
+        if match:
+            env_var, default = match.groups()
+            return os.environ.get(env_var, default)
+    return value
+
+def _deep_expand(obj):
+    """递归处理 dict/list 中的所有字符串值。"""
+    if isinstance(obj, dict):
+        return {k: _deep_expand(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_deep_expand(v) for v in obj]
+    return _expand_env(obj)
 
 # ── Raw-config cache (M9) ─────────────────────────────────────────────
 # Parsing YAML on every request is wasteful (GET/PUT config, get_database_url).
@@ -16,7 +37,8 @@ def load_raw() -> dict:
     global _raw_cache
     if _raw_cache is None:
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-            _raw_cache = yaml.safe_load(f) or {"provider": "claude", "providers": {}}
+            raw = yaml.safe_load(f) or {"provider": "claude", "providers": {}}
+        _raw_cache = _deep_expand(raw)
     return _raw_cache
 
 
