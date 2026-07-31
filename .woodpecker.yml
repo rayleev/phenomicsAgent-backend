@@ -44,17 +44,20 @@ steps:
         # ── 5. 启动新容器 ──
         # 主机端口 8007（8001 已被 paperrag-query 占用），容器端口 8001。
         # 前端 nginx 通过容器名 phenomics-backend:8001 代理，不受主机端口影响。
+        # docker run 只支持单个 --network，启动后用 docker network connect 加入第二个网络
         # infra 网络: 用容器名 postgres 直接访问数据库（不再依赖 host.docker.internal）
         # phenomics-net: 与 phenomics-frontend / drone-imaging 通信
         docker run -d \
           --name phenomics-backend \
           --network infra \
-          --network phenomics-net \
           --restart unless-stopped \
           -p 8007:8001 \
           -v "$DEPLOY_DIR/backend-config.yaml:/app/config.yaml" \
           --env-file "$DEPLOY_DIR/backend.env" \
           phenomics-agent-backend:latest
+
+        # 加入第二个网络（docker run 限制：创建时只能指定一个网络）
+        docker network connect phenomics-net phenomics-backend
 
         # ── 6. 健康检查（最多 60s）──
         # 用独立 curl 容器接入 phenomics-net，通过容器名访问后端。
@@ -75,12 +78,12 @@ steps:
           docker run -d \
             --name phenomics-backend \
             --network infra \
-            --network phenomics-net \
             --restart unless-stopped \
             -p 8007:8001 \
             -v "$DEPLOY_DIR/backend-config.yaml:/app/config.yaml" \
             --env-file "$DEPLOY_DIR/backend.env" \
             $OLD_IMAGE
+          docker network connect phenomics-net phenomics-backend
           echo "已回滚到旧镜像"
         fi
         exit 1

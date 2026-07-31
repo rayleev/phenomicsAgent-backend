@@ -6,18 +6,23 @@ services:
       dockerfile: Dockerfile
     container_name: phenomics-backend
     ports:
-      - "8001:8001"
+      - "8007:8001"   # 主机 8007 → 容器 8001（8001 已被 paperrag-query 占用）
     env_file:
       - .env
     volumes:
       - ./backend-config/config.yaml:/app/config.yaml:ro
-    environment:
-      - DRONE_IMAGING_BASE=http://host.docker.internal:8005
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    networks:
+      - infra         # 访问 postgres、minio、milvus 等基础设施
+      - phenomics-net # 与 phenomics-frontend 通信
 
+# =============================================================================
+# 网络
+# =============================================================================
 networks:
-  default:
+  infra:
+    name: infra
+    external: true
+  phenomics-net:
     name: phenomics-net
     external: true
